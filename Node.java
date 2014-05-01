@@ -29,7 +29,7 @@ public class Node
 	private ReservationBean[] timeSlots;
 	private ReservationBean[] FI;
 	
-	
+	//Original timeslot settings
 	private ReservationBean[] originalTimeSlots;
 	private ReservationBean[] originalFI;
 	
@@ -92,8 +92,10 @@ public class Node
 		}
 		
 		
-		//******* Will Change, need to set back after a trial
+		//******* Volatile, need to set back after a trial *****//
 		
+		
+		//Sets timeslots and copy of timeslot values to default values
 		this.remainingReservationTime = originalReservationDuration;
 		timeSlots = new ReservationBean[this.numSlots];
 		FI = new ReservationBean[this.numSlots];
@@ -117,10 +119,7 @@ public class Node
 		}
 		this.waitDelayFactor = waitDelayFactor;
 	}
-	/**
-	 * gets the Nodes ID
-	*/
-	public int getID() {
+ int getID() {
 		return ID;
 	}
 	public void setID(int iD) {
@@ -382,6 +381,14 @@ public class Node
 	{
 		return this.success;
 	}
+	/*
+	 * Sends a message (Returns a message to the model)
+	 * 3 Possible scenarios:
+	 * 
+	 * 1. Node doesn't have a reserved timeslot - Tried to reserve a timeslot and returns null to model (No transmission)
+	 * 2. Current timeslot matches the nodes reservation; node sends a message by sending returning a timeslot
+	 * 3. Current timeslot matches the nodes intended retransmission timeslot - retransmit the message by returning the message
+	 */
 	public Message sendMsg()
 	{
 		Message toSend = null;
@@ -417,11 +424,22 @@ public class Node
 		}
 		return toSend;
 	}
+	/*
+	 * Adds a message to the received message buffer (Buffer simplifies detecting message collision without effecting model)
+	 */
 	public void addMessageToBuffer(Message m)
 	{
 		//System.out.println("Node ID " + this.ID + " Receiver ID: " + m.getReceiverID() + " Sender ID: " + m.getSenderID());
 		this.buffer.add(m);
 	}
+	/*
+	 * Processes the buffer
+	 * 3 scenarios:
+	 * 
+	 * 1. Buffer only has 1 item - no message collision
+	 * 2. Have a collision with a retransmission (Trigger JAM)
+	 * 3. Have a collision with a contending node not aware of enviroment
+	 */
 	public void processBuffer()
 	{
 		int bufferSize = this.buffer.size();
