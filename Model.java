@@ -10,20 +10,20 @@ import java.util.*;
 public class Model 
 {
 	//Simulation parameters
-	private int numNodes;
-	private int numLanes;
-	private int width;
-	private double PoS;
-	private double density;
-	private int range;
-	private int numSlots;
-	private int waitDelayFactor;
+	private int numNodes; //Number of nodes
+	private int numLanes; //Number of lanes
+	private int width; //Width between lanes
+	private double PoS; //Probability of success
+	private double density; //Node density
+	private int range; //Radio range 
+	private int numSlots; //Number if timeslots in a frame
+	private int waitDelayFactor; //Number of frames to wait before attempting to reserve a slot
 	
 	//AdHoc parameters
 	private double b;
 	private int maxReservationDuration;
 	
-	//Clock
+	//Clock referance
 	Clock c = Clock.CLOCK;
 	
 	//Random number generator
@@ -44,6 +44,9 @@ public class Model
 	//List of nodes without reservation for PoS reset to ensure same nodes
 	private List<Node> noRes = new ArrayList<Node>();
 
+	/*
+	 * Model constructor
+	 */
 	public Model(int numNodes, int numLanes, int width, double poS,
 			double density, int range, double b, int reservationDuration, int numSlots, int maxMemory, int waitDelayFactor) {
 		this.numNodes = numNodes;
@@ -203,6 +206,9 @@ public class Model
 		//Scanner input = new Scanner(System.in);
 		//input.nextLine();
 	}
+	/*
+	 * Finds the THS of a node by checking the simulation field in a range*2 radius around a node
+	 */
 	public void findTHS()
 	{
 		int doubleRange = this.range * 2;
@@ -313,7 +319,12 @@ public class Model
 			}
 		}
 	}*/
-	
+	/*
+	 * Attempts to reserve a timeslot for each node
+	 * 
+	 * Chooses a random empty timeslot and checks the timeslot of every node in its OHS to ensure the timeslot does not collide with any 
+	 * nodes in the THS. If there is no collision, all nodes in the THS are notified of the reservation.
+	 */
 	public void reserveTimeSlots()
 	{
 		List<Integer> hasSlot = new ArrayList<Integer>();
@@ -342,7 +353,7 @@ public class Model
 						break;
 					}
 				}
-				if(canAdd)
+				if(canAdd) //Notify of reservation
 				{
 					toAttemptReservation.setReservation(slotToReserve);
 					
@@ -373,7 +384,12 @@ public class Model
 	{
 		return field;
 	}
-	
+	/*
+	 * Processes a single frame
+	 * 
+	 * 1. Collects all messages, C-Ack and JAM messages
+	 * 2. Sends C-Ack, Messages and JAM signals in described order
+	 */
 	public void processFrame()
 	{
 		for(int i = 0; i < this.numSlots; i++)
@@ -438,7 +454,11 @@ public class Model
 			n.clearStaleCache(this.maxMemory);
 		}
 	}
-	
+	/*
+	 * Sends a message to all nodes in range
+	 * Does not make any assumptions or use any knowledge of the simulation field
+	 * Messages are sent in a radius of size range around the passed node
+	 */
 	public void sendInRange(int senderID, Message m)
 	{
 		Node active = nodes.get(senderID);
@@ -490,6 +510,11 @@ public class Model
 		}
 	}
 
+	/*
+	 * Sends C-ACK msgs to all nodes in range
+	 * Does not make any assumptions or use any knowledge of the simulation field
+	 * Messages are sent in a radius of size range around the passed node
+	 */
 	public void sendACKInRange(int senderID, ACKMessage m)
 	{
 		Node active = nodes.get(senderID);
@@ -538,6 +563,11 @@ public class Model
 			}
 		}
 	}
+	/*
+	 * Sends a JAM message to all nodes in range
+	 * Does not make any assumptions or use any knowledge of the simulation field
+	 * Messages are sent in a radius of size range around the passed node
+	 */
 	public void sendJamInRange(int senderID, JamMessage m)
 	{
 		Node active = nodes.get(senderID);

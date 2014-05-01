@@ -10,13 +10,15 @@ import java.util.*;
 public class RetransmitterTracker 
 {
 	public final static RetransmitterTracker RetransmittorTracker = new RetransmitterTracker();
-	private Map<Integer, Integer> rm = new HashMap<Integer, Integer>();
+	private Map<Integer, Integer> rm = new HashMap<Integer, Integer>(); //Map tracking Message to # of possible retransmitters
 	
 	private RetransmitterTracker()
 	{
 		
 	}
-	
+	/*
+	 * Adds a message to the map or increments the number of retransmitters
+	 */
 	public void AddPossibleRetransmitNode(Message m)
 	{
 		if(rm.containsKey(m.getMsgID()))
