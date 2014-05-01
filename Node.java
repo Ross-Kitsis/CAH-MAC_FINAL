@@ -6,17 +6,19 @@ public class Node
 {
 	//Node parameters
 	private int ID; //Unique ID of the node
-	private int numSlots;
-	private double PoS;
-	private int range;
-	private int lane;
-	private int xlanePosition;
-	private int ylanePosition;
-	private int waitDelayFactor;
+	private int numSlots; //Number of timeslots in a frame
+	private double PoS; //Probability of message success
+	private int range; //Radio range
+	private int lane; //Lane
+	private int xlanePosition; //X position
+	private int ylanePosition; //Y position
+	private int waitDelayFactor; //Number of frames to wait before contending for timeslot
 	
+	//Lists holding OHS and THS
 	private List<Integer> OHS = new ArrayList<Integer>();
 	private List<Integer> THS = new ArrayList<Integer>();
 	
+	//Referance to a global clock
 	Clock clock = Clock.CLOCK;
 
 	
