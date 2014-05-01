@@ -473,6 +473,10 @@ public class Node
 		
 		buffer.clear();
 	}
+	/*
+	 * Receives a message from another node once processed by the buffer
+	 * 
+	 */
 	public void recieveMsg(Message m)
 	{
 		double didReceive = rng.nextDouble();
@@ -486,18 +490,18 @@ public class Node
 		boolean recInOHS = this.recInOHS(receiverID);
 		
 		
-		if(didReceive <= PoS)
+		if(didReceive <= PoS) //Randomly determine if message is received based on PoS
 		{
 			if(isRetransmit == false)
 			{
-				if(recInOHS)
+				if(recInOHS) //If the intended reciever is in the OHS of the node, add it to the retransmit tracker 
 				{
 					rt.AddPossibleRetransmitNode(m);
 				}
 				
-				updateNeighbourTables(m);
+				updateNeighbourTables(m); //Update neighbor tables based on the information in the message header
 				
-				if(receiverID == this.ID)
+				if(receiverID == this.ID) //Intended recieve is current node (Receive the msg)
 				{
 					if(!allRec.contains(m.getMsgID()))
 					{
@@ -508,8 +512,9 @@ public class Node
 						this.success--;
 					}
 					//System.out.println("Node " + this.ID + " got msg for it");
-				}else if(recInOHS)
+				}else if(recInOHS) //Intended receiver is not the current node but the intended receiver is in the current nodes OHS
 				{
+					//Add message to buffer
 					if(rMsgs.containsKey(receiverID))
 					{
 						rMsgs.get(receiverID).add(new MemoryBean(m,clock.getFrame()));
@@ -520,12 +525,13 @@ public class Node
 						rMsgs.put(receiverID, temp);
 					}
 					
+					//Check recieved message for Coop header in case need to transmit an C-ACK
 					if(m.getCoHeader().getReceiverID() == this.ID)
 					{
 						this.ackID = senderID;
 						this.ackSlot = m.getCoHeader().getIndexRetransmit();
 					}
-					
+					//Check coop header for collisions in retransmission times (abort transmission if have a collision)
 					if(this.checkForRetransCollision(m.getCoHeader()))
 					{
 						this.intention = false;
@@ -533,17 +539,22 @@ public class Node
 						this.retransIndex = -1;
 						this.frameRetransmit = -1;
 					}
+					//Clear successful past msgs from cache based on the FI in the received message
 					this.clearSuccessFromCache(m);
 					
+					//Check if cooperation triggers for the sending node
 					boolean haveInBuffer =  haveNodeMessagesInBuffer(senderID);
-					if(haveInBuffer && !this.intention && this.reservation != -1)
+					if(haveInBuffer && !this.intention && this.reservation != -1) //Must have a message for the node in the buffer and have a current reservation
 					{
+						//Search for a message to retransmit
 						Message toRetransmit = findFailedMsg(m);
-						if(toRetransmit != null)
+						if(toRetransmit != null) //Msg found
 						{
+							//Search for a free timeslot during which to attempt retransmission
 							int retranSlot = this.findRetransmitSlot();
-							if(retranSlot != -1)
+							if(retranSlot != -1) //Free slot found
 							{
+								//Set cooperation parameters
 								this.intention = true;
 								this.failIndex = toRetransmit.getTimeSlot();
 								this.retransIndex = retranSlot;
@@ -560,14 +571,14 @@ public class Node
 				}
 			}else
 			{
-				if(m.getReceiverID() == this.ID)
+				if(m.getReceiverID() == this.ID) //Retransmit successfully received
 				{
 					success++;
 				}
 			}
 		}else
 		{
-			this.FI[clock.getTimeSlot()].setHolder(-1);
+			this.FI[clock.getTimeSlot()].setHolder(-1); //Set FI to -1 indicating no msg during this timeslot - Possibly free or possible collision/Error in transmission
 		}
 	}
 	/**
@@ -760,6 +771,9 @@ public class Node
 			this.FI[i].decrementDuration();
 		}
 	}
+	/*
+	 * Clear expired reservations from the timeslots and FI fields based on remaining durations
+	 */
 	public void clearExpiredReservations()
 	{
 		//NEED TO IMPLEMENT
@@ -792,6 +806,11 @@ public class Node
 			}
 		}
 	}
+	/*
+	 * Attempts to reserve a slot
+	 * First ensures that the node has listened for at least 1 full frame
+	 * Once the node has listened to at least 1 frame of timeslots attempts to find a free slot based on its view of timeslots
+	 */
 	public void attemptReservation()
 	{
 		if(waitCount < (this.numSlots * waitDelayFactor))
@@ -825,6 +844,9 @@ public class Node
 			}
 		}
 	}
+	/*
+	 * Sends a JAM message to the model indicating message collisions
+	 */
 	public JamMessage sendJam()
 	{
 		if(this.haveJam == true)
@@ -837,6 +859,9 @@ public class Node
 			return null;
 		}
 	}
+	/*
+	 * Receives a JAM message and clears reservations of where JAM occured
+	 */
 	public void recJam(JamMessage j)
 	{
 		if(clock.getTimeSlot() == this.reservation)
@@ -854,6 +879,9 @@ public class Node
 			this.timeSlots[clock.getTimeSlot()].setHolder(-1);
 		}
 	}
+	/*
+	 * Resets a Node to its state at the start of the trial
+	 */
 	public void reset()
 	{
 		this.reservation = originalReservation;
@@ -884,6 +912,9 @@ public class Node
 		
 		//this.allRec.clear();
 	}
+	/*
+	 * Saves timeslot and FI information for later retoration during reset. 
+	 */
 	public void saveValues()
 	{
 	//	System.out.println(this.FI[1].getHolder() + " " + this.FI[1].getDuration());
